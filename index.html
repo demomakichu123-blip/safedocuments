@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1a5276">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="SafeDocuments">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+<title>SafeDocuments — নিরাপদ ডকুমেন্ট ভল্ট</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: system-ui, -apple-system, "Noto Sans Bengali", sans-serif; background: #f2f5f7; color: #1c2b33; padding-bottom: 40px; }
+  header { background: #1a5276; color: #fff; padding: 18px 16px 14px; }
+  header h1 { font-size: 22px; }
+  header p { opacity: .85; font-size: 13px; margin-top: 2px; }
+  .headrow { display: flex; justify-content: space-between; align-items: flex-start; }
+  .lockbtn { background: rgba(255,255,255,.18); color: #fff; border: none; border-radius: 8px; padding: 8px 12px; font-size: 14px; cursor: pointer; white-space: nowrap; }
+  .wrap { max-width: 640px; margin: 0 auto; padding: 0 14px; }
+  .summary { display: flex; gap: 10px; margin-top: 14px; }
+  .card { background: #fff; border-radius: 12px; padding: 14px; flex: 1; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+  .card .label { font-size: 12px; color: #666; }
+  .card .value { font-size: 22px; font-weight: 700; margin-top: 4px; }
+  .amber { color: #b26a00; } .red { color: #b00020; } .blue { color: #1a5276; }
+  .tabs { display: flex; gap: 8px; margin: 16px 0 12px; }
+  .tabs button { flex: 1; padding: 11px; border: none; border-radius: 10px; font-size: 16px; font-weight: 600; background: #e3e8eb; color: #333; cursor: pointer; }
+  .tabs button.active { background: #1a5276; color: #fff; }
+  form { background: #fff; border-radius: 12px; padding: 14px; box-shadow: 0 1px 4px rgba(0,0,0,.08); margin-bottom: 14px; }
+  form .row { display: flex; gap: 8px; margin-bottom: 8px; }
+  form input, form select, form textarea { flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 8px; font-size: 15px; min-width: 0; font-family: inherit; }
+  form textarea { width: 100%; resize: vertical; }
+  form button { width: 100%; padding: 11px; border: none; border-radius: 8px; background: #1a5276; color: #fff; font-size: 16px; font-weight: 600; cursor: pointer; }
+  form button.cancel { background: #888; margin-top: 6px; }
+  form button.scan { background: #2471a3; margin-bottom: 8px; }
+  form label { font-size: 13px; color: #555; display: block; margin-bottom: 4px; }
+  h2 { font-size: 16px; margin: 16px 0 8px; }
+  .item { background: #fff; border-radius: 12px; padding: 12px 14px; box-shadow: 0 1px 4px rgba(0,0,0,.08); margin-bottom: 8px; }
+  .item .top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+  .item .title { font-weight: 700; font-size: 16px; }
+  .item .meta { font-size: 13px; color: #666; margin-top: 3px; }
+  .item .note { font-size: 14px; margin-top: 4px; }
+  .item .actions { margin-top: 8px; display: flex; gap: 6px; flex-wrap: wrap; }
+  .item .actions button { padding: 6px 12px; border: none; border-radius: 7px; font-size: 13px; cursor: pointer; background: #eef2f5; }
+  .item .actions button.danger { background: #fde8e8; color: #b00020; }
+  .chip { display: inline-block; font-size: 12px; font-weight: 600; padding: 3px 9px; border-radius: 20px; background: #d6eaf8; color: #1a5276; white-space: nowrap; }
+  .chip.warn { background: #fef3c7; color: #b26a00; }
+  .chip.bad { background: #fde8e8; color: #b00020; }
+  .chip.ok { background: #e6f4ea; color: #1e7d32; }
+  .thumb { width: 100%; border-radius: 8px; margin-top: 8px; cursor: pointer; max-height: 220px; object-fit: cover; }
+  .empty { text-align: center; color: #888; padding: 24px 0; font-size: 14px; }
+  .hidden { display: none; }
+  .filters { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+  .filters button { padding: 7px 12px; border: 1px solid #ccc; border-radius: 20px; background: #fff; font-size: 13px; cursor: pointer; }
+  .filters button.on { background: #1a5276; color: #fff; border-color: #1a5276; }
+  .searchrow { margin-bottom: 10px; }
+  .searchrow input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; font-size: 15px; }
+  .warnbox { background: #fef3c7; border: 1px solid #f5c542; border-radius: 12px; padding: 12px 14px; margin-top: 14px; font-size: 14px; }
+  .warnbox.red { background: #fde8e8; border-color: #f5a3a3; }
+  .warnbox h3 { font-size: 15px; margin-bottom: 6px; }
+  .warnbox .wrow { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid rgba(0,0,0,.06); font-size: 14px; }
+  .warnbox .wrow:last-child { border-bottom: none; }
+  .setbox { background: #fff; border-radius: 12px; padding: 14px; box-shadow: 0 1px 4px rgba(0,0,0,.08); margin-bottom: 14px; }
+  .setbox h3 { font-size: 15px; margin-bottom: 8px; }
+  .setbox p { font-size: 13px; color: #666; margin-bottom: 10px; line-height: 1.5; }
+  .setbox .row { display: flex; gap: 8px; margin-bottom: 8px; }
+  .setbox input { flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 8px; font-size: 15px; min-width: 0; }
+  .btn { width: 100%; padding: 11px; border: none; border-radius: 8px; background: #1a5276; color: #fff; font-size: 15px; font-weight: 600; cursor: pointer; margin-bottom: 8px; }
+  .btn.secondary { background: #eef2f5; color: #1a5276; }
+  .btn.danger { background: #b00020; }
+  .usagebar { height: 10px; background: #e3e8eb; border-radius: 6px; overflow: hidden; margin: 6px 0 4px; }
+  .usagebar div { height: 100%; background: #1a5276; }
+  .usagebar div.hot { background: #b26a00; }
+  /* লক স্ক্রিন */
+  #lockScreen { position: fixed; inset: 0; background: #1a5276; color: #fff; z-index: 100; display: flex; align-items: center; justify-content: center; padding: 20px; }
+  #lockScreen .lockcard { text-align: center; width: 100%; max-width: 320px; }
+  #lockScreen h1 { font-size: 26px; margin-bottom: 4px; }
+  #lockScreen p { opacity: .85; font-size: 14px; margin-bottom: 20px; }
+  .dots { display: flex; gap: 12px; justify-content: center; margin-bottom: 22px; }
+  .dots span { width: 16px; height: 16px; border-radius: 50%; border: 2px solid #fff; }
+  .dots span.filled { background: #fff; }
+  .pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; max-width: 260px; margin: 0 auto; }
+  .pad button { height: 62px; border-radius: 50%; border: 1px solid rgba(255,255,255,.5); background: rgba(255,255,255,.08); color: #fff; font-size: 24px; cursor: pointer; }
+  .pad button:active { background: rgba(255,255,255,.25); }
+  .pad button.small { font-size: 15px; }
+  #lockMsg { color: #ffd2d2; min-height: 20px; font-size: 14px; margin-top: 14px; }
+  /* ছবি বড় করে দেখা */
+  #imgModal { position: fixed; inset: 0; background: rgba(0,0,0,.92); z-index: 90; display: flex; align-items: center; justify-content: center; padding: 12px; }
+  #imgModal img { max-width: 100%; max-height: 90vh; border-radius: 8px; }
+  #imgModal .close { position: absolute; top: 14px; right: 16px; background: #fff; border: none; border-radius: 50%; width: 40px; height: 40px; font-size: 20px; cursor: pointer; }
+</style>
+</head>
+<body>
+
+<!-- ======= PIN লক স্ক্রিন ======= -->
+<div id="lockScreen">
+  <div class="lockcard">
+    <h1>🔒 SafeDocuments</h1>
+    <p id="lockTitle">PIN দিয়ে খুলো</p>
+    <div class="dots" id="pinDots"><span></span><span></span><span></span><span></span></div>
+    <div class="pad">
+      <button onclick="pinPress('1')">1</button><button onclick="pinPress('2')">2</button><button onclick="pinPress('3')">3</button>
+      <button onclick="pinPress('4')">4</button><button onclick="pinPress('5')">5</button><button onclick="pinPress('6')">6</button>
+      <button onclick="pinPress('7')">7</button><button onclick="pinPress('8')">8</button><button onclick="pinPress('9')">9</button>
+      <button class="small" onclick="pinClear()">মুছো</button><button onclick="pinPress('0')">0</button><button class="small" onclick="pinBack()">⌫</button>
+    </div>
+    <div id="lockMsg"></div>
+  </div>
+</div>
+
+<!-- ======= ছবি বড় করে দেখা ======= -->
+<div id="imgModal" class="hidden" onclick="closeImg()">
+  <button class="close" onclick="closeImg()">✕</button>
+  <img id="imgModalImg" alt="ডকুমেন্টের ছবি">
+</div>
+
+<div id="app" class="hidden">
+<header>
+  <div class="wrap">
+    <div class="headrow">
+      <div>
+        <h1>🔒 SafeDocuments</h1>
+        <p>NID, পাসপোর্ট, লাইসেন্স, জন্ম নিবন্ধন, ওয়ারেন্টি — সব এক জায়গায়</p>
+      </div>
+      <button class="lockbtn" onclick="lockApp()">🔒 লক</button>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="summary">
+    <div class="card"><div class="label">মোট ডকুমেন্ট</div><div class="value blue" id="totalDocs">০</div></div>
+    <div class="card"><div class="label">৩০ দিনে মেয়াদ শেষ</div><div class="value amber" id="soonCount">০</div></div>
+    <div class="card"><div class="label">মেয়াদ শেষ</div><div class="value red" id="expiredCount">০</div></div>
+  </div>
+
+  <div id="reminders"></div>
+
+  <div class="tabs">
+    <button id="tabDoc" class="active" onclick="showTab('doc')">📄 ডকুমেন্ট</button>
+    <button id="tabSet" onclick="showTab('set')">⚙️ ব্যাকআপ ও সেটিংস</button>
+  </div>
+
+  <!-- ======= ডকুমেন্ট ======= -->
+  <div id="docView">
+    <form id="docForm" onsubmit="saveDoc(event)">
+      <div class="row">
+        <input type="text" id="docTitle" placeholder="ডকুমেন্টের নাম (যেমন: আমার NID)" required>
+        <select id="docCat">
+          <option>NID</option><option>পাসপোর্ট</option><option>ড্রাইভিং লাইসেন্স</option>
+          <option>জন্ম নিবন্ধন</option><option>ওয়ারেন্টি কার্ড</option><option>অন্যান্য</option>
+        </select>
+      </div>
+      <div class="row">
+        <input type="text" id="docNumber" placeholder="ডকুমেন্ট নম্বর (ঐচ্ছিক)">
+      </div>
+      <div class="row">
+        <div style="flex:1"><label>ইস্যুর তারিখ</label><input type="date" id="docIssue" style="width:100%"></div>
+        <div style="flex:1"><label>মেয়াদ শেষের তারিখ</label><input type="date" id="docExpiry" style="width:100%"></div>
+      </div>
+      <div class="row">
+        <textarea id="docNote" rows="2" placeholder="নোট (ঐচ্ছিক — যেমন: কোথায় রাখা আছে)"></textarea>
+      </div>
+      <input type="file" id="docPhotoInput" accept="image/*" capture="environment" class="hidden" onchange="handlePhoto(this)">
+      <input type="file" id="docFileInput" accept="image/*" class="hidden" onchange="handlePhoto(this)">
+      <button type="button" class="scan" onclick="document.getElementById('docPhotoInput').click()">📷 স্ক্যান করো / ছবি তোলো</button>
+      <button type="button" class="scan" style="background:#5d6d7e" onclick="document.getElementById('docFileInput').click()">🖼️ গ্যালারি থেকে ছবি নাও</button>
+      <div id="photoPreview"></div>
+      <button type="submit" id="docSubmit">ডকুমেন্ট যোগ করো</button>
+      <button type="button" class="cancel hidden" id="docCancel" onclick="cancelDocEdit()">বাতিল</button>
+    </form>
+
+    <div class="searchrow"><input type="text" id="searchBox" placeholder="🔍 খুঁজো — নাম, নম্বর বা নোট..." oninput="render()"></div>
+    <div class="filters" id="filterChips"></div>
+
+    <h2>ডকুমেন্টের তালিকা</h2>
+    <div id="docList"></div>
+  </div>
+
+  <!-- ======= ব্যাকআপ ও সেটিংস ======= -->
+  <div id="setView" class="hidden">
+    <div class="setbox">
+      <h3>💾 স্টোরেজ</h3>
+      <p>সব ডেটা এই ফোনের ব্রাউজারেই থাকে — কোথাও আপলোড হয় না। ব্রাউজারের জায়গা ~৫ MB।</p>
+      <div class="usagebar"><div id="usageFill" style="width:0%"></div></div>
+      <p id="usageText">ব্যবহৃত: ০ KB</p>
+      <p id="usageWarn" class="hidden" style="color:#b26a00;font-weight:600">⚠️ জায়গা প্রায় শেষ — পুরোনো ছবি মুছে নাও বা ব্যাকআপ নিয়ে ডকুমেন্ট কমাও।</p>
+    </div>
+
+    <div class="setbox">
+      <h3>📤 ব্যাকআপ (JSON)</h3>
+      <p>সব ডকুমেন্ট (ছবিসহ) একটা JSON ফাইলে নামিয়ে রাখো। ফোন বদলালে এই ফাইল দিয়ে ফিরিয়ে আনতে পারবে।</p>
+      <button class="btn" onclick="exportBackup()">⬇️ ব্যাকআপ ডাউনলোড করো</button>
+      <input type="file" id="importInput" accept="application/json,.json" class="hidden" onchange="importBackup(this)">
+      <button class="btn secondary" onclick="document.getElementById('importInput').click()">⬆️ ব্যাকআপ থেকে ফিরিয়ে আনো</button>
+    </div>
+
+    <div class="setbox">
+      <h3>🔑 PIN বদলাও</h3>
+      <div class="row">
+        <input type="password" id="pinOld" inputmode="numeric" maxlength="4" placeholder="বর্তমান PIN">
+      </div>
+      <div class="row">
+        <input type="password" id="pinNew" inputmode="numeric" maxlength="4" placeholder="নতুন PIN (৪ সংখ্যা)">
+        <input type="password" id="pinNew2" inputmode="numeric" maxlength="4" placeholder="নতুন PIN আবার">
+      </div>
+      <button class="btn" onclick="changePin()">PIN বদলাও</button>
+      <p id="pinChangeMsg"></p>
+    </div>
+
+    <div class="setbox">
+      <h3>ℹ️ নিরাপত্তা নোট</h3>
+      <p>এই PIN শুধু এই ডিভাইসে অ্যাপ খোলা আটকায় — এটা এনক্রিপশন না। ফোনের ডেটা কেউ সরাসরি পড়তে পারলে PIN দিয়ে আটকানো যাবে না। তাই ফোনে স্ক্রিন লকও চালু রাখো, আর ব্যাকআপ ফাইলটা নিরাপদ জায়গায় রাখো।</p>
+      <button class="btn danger" onclick="lockApp()">🔒 এখনই লক করো</button>
+    </div>
+  </div>
+</div>
+</div>
+
+<script>
+const CATS = ["NID", "পাসপোর্ট", "ড্রাইভিং লাইসেন্স", "জন্ম নিবন্ধন", "ওয়ারেন্টি কার্ড", "অন্যান্য"];
+const LIMIT = 5 * 1024 * 1024; // localStorage ~5MB
+let docs = JSON.parse(localStorage.getItem("sd_docs") || "[]");
+let editingDoc = null;
+let pendingImg = null;
+let filterCat = "সব";
+let unlocked = false;
+
+const today = () => new Date().toISOString().slice(0, 10);
+const todayMid = () => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; };
+const dayMs = 86400000;
+
+function persist() {
+  try {
+    localStorage.setItem("sd_docs", JSON.stringify(docs));
+    return true;
+  } catch (e) {
+    alert("জায়গা শেষ হয়ে গেছে! ছবি ছাড়া সেভ করো বা পুরোনো ডকুমেন্ট মুছে জায়গা করো।");
+    return false;
+  }
+}
+function byteSize() {
+  try { return unescape(encodeURIComponent(JSON.stringify(docs))).length; } catch (e) { return 0; }
+}
+function daysLeft(expiry) {
+  if (!expiry) return null;
+  return Math.ceil((new Date(expiry + "T00:00:00") - todayMid()) / dayMs);
+}
+
+/* ---------- PIN লক ---------- */
+let pinMode = "unlock"; // unlock | setup1 | setup2
+let pinEntry = "";
+let pinNew = "";
+
+function pinDots() {
+  const dots = document.querySelectorAll("#pinDots span");
+  dots.forEach((d, i) => d.classList.toggle("filled", i < pinEntry.length));
+}
+function pinMsg(t) { document.getElementById("lockMsg").textContent = t || ""; }
+function pinPress(d) {
+  if (pinEntry.length >= 4) return;
+  pinEntry += d;
+  pinDots();
+  if (pinEntry.length === 4) setTimeout(pinDone, 150);
+}
+function pinBack() { pinEntry = pinEntry.slice(0, -1); pinDots(); }
+function pinClear() { pinEntry = ""; pinDots(); }
+
+function pinDone() {
+  const stored = localStorage.getItem("sd_pin");
+  if (pinMode === "unlock") {
+    if (pinEntry === stored) { unlockApp(); }
+    else { pinMsg("ভুল PIN — আবার চেষ্টা করো"); pinEntry = ""; pinDots(); }
+  } else if (pinMode === "setup1") {
+    pinNew = pinEntry; pinEntry = ""; pinDots();
+    pinMode = "setup2";
+    document.getElementById("lockTitle").textContent = "PIN আবার দাও (নিশ্চিত করো)";
+  } else if (pinMode === "setup2") {
+    if (pinEntry === pinNew) {
+      localStorage.setItem("sd_pin", pinEntry);
+      unlockApp();
+    } else {
+      pinMsg("দুটো PIN মিললো না — আবার শুরু করো");
+      pinEntry = ""; pinDots(); pinMode = "setup1";
+      document.getElementById("lockTitle").textContent = "৪ সংখ্যার PIN দাও (প্রথমবার)";
+    }
+  }
+}
+function unlockApp() {
+  unlocked = true;
+  document.getElementById("lockScreen").classList.add("hidden");
+  document.getElementById("app").classList.remove("hidden");
+  pinEntry = ""; pinDots(); pinMsg("");
+  render();
+}
+function lockApp() {
+  unlocked = false;
+  pinMode = "unlock";
+  pinEntry = ""; pinDots(); pinMsg("");
+  document.getElementById("lockTitle").textContent = "PIN দিয়ে খুলো";
+  document.getElementById("app").classList.add("hidden");
+  document.getElementById("lockScreen").classList.remove("hidden");
+}
+function initLock() {
+  if (!localStorage.getItem("sd_pin")) {
+    pinMode = "setup1";
+    document.getElementById("lockTitle").textContent = "৪ সংখ্যার PIN দাও (প্রথমবার)";
+  } else {
+    pinMode = "unlock";
+    document.getElementById("lockTitle").textContent = "PIN দিয়ে খুলো";
+  }
+}
+
+/* ---------- ট্যাব ---------- */
+function showTab(t) {
+  document.getElementById("tabDoc").classList.toggle("active", t === "doc");
+  document.getElementById("tabSet").classList.toggle("active", t === "set");
+  document.getElementById("docView").classList.toggle("hidden", t !== "doc");
+  document.getElementById("setView").classList.toggle("hidden", t !== "set");
+  if (t === "set") renderUsage();
+}
+
+/* ---------- ছবি (স্ক্যানার) ---------- */
+function handlePhoto(input) {
+  const file = input.files && input.files[0];
+  input.value = "";
+  if (!file) return;
+  if (!file.type.startsWith("image/")) { alert("ছবির ফাইল দাও"); return; }
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      const max = 1000;
+      const scale = Math.min(1, max / Math.max(img.width, img.height));
+      const w = Math.round(img.width * scale), h = Math.round(img.height * scale);
+      const c = document.createElement("canvas");
+      c.width = w; c.height = h;
+      c.getContext("2d").drawImage(img, 0, 0, w, h);
+      pendingImg = c.toDataURL("image/jpeg", 0.75);
+      showPhotoPreview();
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+function showPhotoPreview() {
+  const el = document.getElementById("photoPreview");
+  el.innerHTML = pendingImg
+    ? `<img class="thumb" src="${pendingImg}" style="cursor:default" alt="ছবির প্রিভিউ">
+       <div class="actions" style="margin:6px 0 10px"><button type="button" onclick="removePhoto()" style="padding:6px 12px;border:none;border-radius:7px;background:#fde8e8;color:#b00020;cursor:pointer">🗑️ ছবি সরাও</button></div>`
+    : "";
+}
+function removePhoto() { pendingImg = null; showPhotoPreview(); }
+
+/* ---------- ডকুমেন্ট CRUD ---------- */
+function saveDoc(e) {
+  e.preventDefault();
+  const title = document.getElementById("docTitle").value.trim();
+  const cat = document.getElementById("docCat").value;
+  const number = document.getElementById("docNumber").value.trim();
+  const issue = document.getElementById("docIssue").value;
+  const expiry = document.getElementById("docExpiry").value;
+  const note = document.getElementById("docNote").value.trim();
+  if (!title) return;
+  const data = { title, cat, number, issue, expiry, note, img: pendingImg };
+  if (editingDoc) {
+    Object.assign(editingDoc, data);
+    editingDoc = null;
+    document.getElementById("docSubmit").textContent = "ডকুমেন্ট যোগ করো";
+    document.getElementById("docCancel").classList.add("hidden");
+  } else {
+    docs.unshift(Object.assign({ id: Date.now() }, data));
+  }
+  if (!persist()) return;
+  e.target.reset();
+  pendingImg = null; showPhotoPreview();
+  render();
+}
+function editDoc(id) {
+  const d = docs.find(v => v.id === id); if (!d) return;
+  editingDoc = d;
+  document.getElementById("docTitle").value = d.title;
+  document.getElementById("docCat").value = d.cat;
+  document.getElementById("docNumber").value = d.number || "";
+  document.getElementById("docIssue").value = d.issue || "";
+  document.getElementById("docExpiry").value = d.expiry || "";
+  document.getElementById("docNote").value = d.note || "";
+  pendingImg = d.img || null;
+  showPhotoPreview();
+  document.getElementById("docSubmit").textContent = "আপডেট করো";
+  document.getElementById("docCancel").classList.remove("hidden");
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+function cancelDocEdit() {
+  editingDoc = null; pendingImg = null; showPhotoPreview();
+  document.getElementById("docForm").reset();
+  document.getElementById("docSubmit").textContent = "ডকুমেন্ট যোগ করো";
+  document.getElementById("docCancel").classList.add("hidden");
+}
+function deleteDoc(id) {
+  if (!confirm("এই ডকুমেন্টটা মুছে ফেলবো?")) return;
+  docs = docs.filter(v => v.id !== id);
+  persist(); render();
+}
+function openImgById(id) {
+  const d = docs.find(v => v.id === id);
+  if (!d || !d.img) return;
+  document.getElementById("imgModalImg").src = d.img;
+  document.getElementById("imgModal").classList.remove("hidden");
+}
+function closeImg() { document.getElementById("imgModal").classList.add("hidden"); }
+
+/* ---------- ব্যাকআপ ---------- */
+function exportBackup() {
+  const blob = new Blob([JSON.stringify({ app: "SafeDocuments", version: 1, exported: today(), docs }, null, 2)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "safedocuments-backup-" + today() + ".json";
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+}
+function importBackup(input) {
+  const file = input.files && input.files[0];
+  input.value = "";
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      const list = Array.isArray(data) ? data : data.docs;
+      if (!Array.isArray(list) || !list.every(v => v && v.title && v.cat)) throw new Error("bad");
+      if (!confirm(list.length + "টা ডকুমেন্ট পাওয়া গেছে। বর্তমান সব ডকুমেন্ট মুছে এগুলো বসাবো?")) return;
+      docs = list.map(v => ({ id: v.id || Date.now() + Math.random(), title: v.title, cat: v.cat, number: v.number || "", issue: v.issue || "", expiry: v.expiry || "", note: v.note || "", img: v.img || null }));
+      if (!persist()) return;
+      render();
+      alert("ব্যাকআপ ফিরিয়ে আনা হয়েছে ✅");
+    } catch (err) {
+      alert("এই ফাইলটা সঠিক ব্যাকআপ না — SafeDocuments-এর JSON ব্যাকআপ দাও।");
+    }
+  };
+  reader.readAsText(file);
+}
+
+/* ---------- PIN বদলানো ---------- */
+function changePin() {
+  const oldP = document.getElementById("pinOld").value;
+  const nw = document.getElementById("pinNew").value;
+  const nw2 = document.getElementById("pinNew2").value;
+  const msg = document.getElementById("pinChangeMsg");
+  if (oldP !== localStorage.getItem("sd_pin")) { msg.textContent = "বর্তমান PIN ভুল"; msg.style.color = "#b00020"; return; }
+  if (!/^\d{4}$/.test(nw)) { msg.textContent = "নতুন PIN ঠিক ৪ সংখ্যার হতে হবে"; msg.style.color = "#b00020"; return; }
+  if (nw !== nw2) { msg.textContent = "নতুন PIN দুটো মিলছে না"; msg.style.color = "#b00020"; return; }
+  localStorage.setItem("sd_pin", nw);
+  document.getElementById("pinOld").value = "";
+  document.getElementById("pinNew").value = "";
+  document.getElementById("pinNew2").value = "";
+  msg.textContent = "PIN বদলে গেছে ✅"; msg.style.color = "#1e7d32";
+}
+
+/* ---------- স্টোরেজ ---------- */
+function renderUsage() {
+  const used = byteSize();
+  const pct = Math.min(100, Math.round(used / LIMIT * 100));
+  const fill = document.getElementById("usageFill");
+  fill.style.width = pct + "%";
+  fill.classList.toggle("hot", pct >= 80);
+  const kb = (used / 1024).toFixed(0);
+  document.getElementById("usageText").textContent = "ব্যবহৃত: " + kb + " KB / ~5120 KB (" + pct + "%)";
+  document.getElementById("usageWarn").classList.toggle("hidden", pct < 80);
+}
+
+/* ---------- রেন্ডার ---------- */
+function expiryBadge(d) {
+  const left = daysLeft(d.expiry);
+  if (left === null) return "";
+  if (left < 0) return `<span class="chip bad">মেয়াদ শেষ ${-left} দিন আগে</span>`;
+  if (left === 0) return `<span class="chip bad">আজই মেয়াদ শেষ!</span>`;
+  if (left <= 30) return `<span class="chip warn">${left} দিন বাকি</span>`;
+  return `<span class="chip ok">${left} দিন বাকি</span>`;
+}
+function render() {
+  if (!unlocked) return;
+  const q = (document.getElementById("searchBox").value || "").toLowerCase();
+  const soon = docs.filter(d => { const l = daysLeft(d.expiry); return l !== null && l >= 0 && l <= 30; });
+  const expired = docs.filter(d => { const l = daysLeft(d.expiry); return l !== null && l < 0; });
+  document.getElementById("totalDocs").textContent = docs.length;
+  document.getElementById("soonCount").textContent = soon.length;
+  document.getElementById("expiredCount").textContent = expired.length;
+
+  // রিমাইন্ডার
+  const rem = document.getElementById("reminders");
+  const rows = [];
+  expired.forEach(d => rows.push(`<div class="wrow"><span>🔴 ${d.title} (${d.cat})</span><b style="color:#b00020">মেয়াদ শেষ ${-daysLeft(d.expiry)} দিন আগে</b></div>`));
+  soon.forEach(d => rows.push(`<div class="wrow"><span>🟠 ${d.title} (${d.cat})</span><b style="color:#b26a00">${daysLeft(d.expiry)} দিন বাকি</b></div>`));
+  rem.innerHTML = rows.length
+    ? `<div class="warnbox ${expired.length ? "red" : ""}"><h3>⏰ মেয়াদ শেষের রিমাইন্ডার</h3>${rows.join("")}</div>`
+    : "";
+
+  // ফিল্টার চিপ
+  const chips = document.getElementById("filterChips");
+  chips.innerHTML = ["সব"].concat(CATS).map(c =>
+    `<button class="${filterCat === c ? "on" : ""}" onclick="setFilter('${c}')">${c}</button>`).join("");
+
+  // তালিকা
+  const list = docs.filter(d => {
+    if (filterCat !== "সব" && d.cat !== filterCat) return false;
+    if (!q) return true;
+    return (d.title + " " + (d.number || "") + " " + (d.note || "")).toLowerCase().includes(q);
+  });
+  const el = document.getElementById("docList");
+  el.innerHTML = list.length ? list.map(d => `
+    <div class="item">
+      <div class="top"><span class="title">${d.title}</span><span class="chip">${d.cat}</span></div>
+      <div class="meta">
+        ${d.number ? "নম্বর: " + d.number + " · " : ""}${d.issue ? "ইস্যু: " + d.issue : ""}${d.issue && d.expiry ? " · " : ""}${d.expiry ? "মেয়াদ: " + d.expiry : ""}
+      </div>
+      ${d.note ? `<div class="note">${d.note}</div>` : ""}
+      <div style="margin-top:6px">${expiryBadge(d)}</div>
+      ${d.img ? `<img class="thumb" src="${d.img}" onclick="openImgById(${d.id})" alt="ডকুমেন্টের ছবি">` : ""}
+      <div class="actions">
+        <button onclick="editDoc(${d.id})">✏️ এডিট</button>
+        <button class="danger" onclick="deleteDoc(${d.id})">🗑️ মুছো</button>
+      </div>
+    </div>`).join("") : `<div class="empty">কোনো ডকুমেন্ট পাওয়া যায়নি — উপরে ফর্ম থেকে যোগ করো</div>`;
+}
+function setFilter(c) { filterCat = c; render(); }
+
+initLock();
+</script>
+<div class="wrap"><p style="text-align:center;color:#888;font-size:12px;margin-top:18px">iPhone-এ অ্যাপ হিসেবে বসাতে: Safari দিয়ে খুলে Share → Add to Home Screen</p></div>
+<script>
+if ("serviceWorker" in navigator) { navigator.serviceWorker.register("sw.js"); }
+</script>
+</body>
+</html>
