@@ -88,6 +88,9 @@
   .pad button:active { background: rgba(255,255,255,.25); }
   .pad button.small { font-size: 15px; }
   #lockMsg { color: #ffd2d2; min-height: 20px; font-size: 14px; margin-top: 14px; }
+  #lockHint { font-size: 13px; opacity: .9; margin: -12px 0 20px; line-height: 1.5; }
+  #lockReset { margin-top: 16px; }
+  #lockReset a { color: #cfe8f7; font-size: 13px; }
   /* ছবি বড় করে দেখা */
   #imgModal { position: fixed; inset: 0; background: rgba(0,0,0,.92); z-index: 90; display: flex; align-items: center; justify-content: center; padding: 12px; }
   #imgModal img { max-width: 100%; max-height: 90vh; border-radius: 8px; }
@@ -101,6 +104,7 @@
   <div class="lockcard">
     <h1>🔒 SafeDocuments</h1>
     <p id="lockTitle">PIN দিয়ে খুলো</p>
+    <p id="lockHint"></p>
     <div class="dots" id="pinDots"><span></span><span></span><span></span><span></span></div>
     <div class="pad">
       <button onclick="pinPress('1')">1</button><button onclick="pinPress('2')">2</button><button onclick="pinPress('3')">3</button>
@@ -109,6 +113,7 @@
       <button class="small" onclick="pinClear()">মুছো</button><button onclick="pinPress('0')">0</button><button class="small" onclick="pinBack()">⌫</button>
     </div>
     <div id="lockMsg"></div>
+    <p id="lockReset"><a href="#" onclick="resetPin(event)">PIN ভুলে গেছো?</a></p>
   </div>
 </div>
 
@@ -224,7 +229,8 @@
 <script>
 const CATS = ["NID", "পাসপোর্ট", "ড্রাইভিং লাইসেন্স", "জন্ম নিবন্ধন", "ওয়ারেন্টি কার্ড", "অন্যান্য"];
 const LIMIT = 5 * 1024 * 1024; // localStorage ~5MB
-let docs = JSON.parse(localStorage.getItem("sd_docs") || "[]");
+let docs = [];
+try { docs = JSON.parse(localStorage.getItem("sd_docs") || "[]"); } catch (e) { docs = []; }
 let editingDoc = null;
 let pendingImg = null;
 let filterCat = "সব";
@@ -260,9 +266,11 @@ function pinDots() {
   const dots = document.querySelectorAll("#pinDots span");
   dots.forEach((d, i) => d.classList.toggle("filled", i < pinEntry.length));
 }
-function pinMsg(t) { document.getElementById("lockMsg").textContent = t || ""; }
+function pinMsg(t, ok) { const el = document.getElementById("lockMsg"); el.textContent = t || ""; el.style.color = ok ? "#b8f5c8" : ""; }
+function pinHint(t) { document.getElementById("lockHint").textContent = t || ""; }
 function pinPress(d) {
   if (pinEntry.length >= 4) return;
+  if (pinEntry.length === 0) pinMsg("");
   pinEntry += d;
   pinDots();
   if (pinEntry.length === 4) setTimeout(pinDone, 150);
@@ -279,6 +287,8 @@ function pinDone() {
     pinNew = pinEntry; pinEntry = ""; pinDots();
     pinMode = "setup2";
     document.getElementById("lockTitle").textContent = "PIN আবার দাও (নিশ্চিত করো)";
+    pinHint("প্রথম PIN-টা আবার দাও — দুটো মিললেই PIN সেট হবে।");
+    pinMsg("✅ প্রথম PIN নেওয়া হয়েছে", true);
   } else if (pinMode === "setup2") {
     if (pinEntry === pinNew) {
       localStorage.setItem("sd_pin", pinEntry);
@@ -287,6 +297,7 @@ function pinDone() {
       pinMsg("দুটো PIN মিললো না — আবার শুরু করো");
       pinEntry = ""; pinDots(); pinMode = "setup1";
       document.getElementById("lockTitle").textContent = "৪ সংখ্যার PIN দাও (প্রথমবার)";
+      pinHint("নিজের পছন্দের যেকোনো ৪ সংখ্যা দাও — এটাই তোমার PIN হবে।");
     }
   }
 }
@@ -302,6 +313,7 @@ function lockApp() {
   pinMode = "unlock";
   pinEntry = ""; pinDots(); pinMsg("");
   document.getElementById("lockTitle").textContent = "PIN দিয়ে খুলো";
+  pinHint("তোমার সেট করা PIN দাও।");
   document.getElementById("app").classList.add("hidden");
   document.getElementById("lockScreen").classList.remove("hidden");
 }
@@ -309,10 +321,19 @@ function initLock() {
   if (!localStorage.getItem("sd_pin")) {
     pinMode = "setup1";
     document.getElementById("lockTitle").textContent = "৪ সংখ্যার PIN দাও (প্রথমবার)";
+    pinHint("নিজের পছন্দের যেকোনো ৪ সংখ্যা দাও — এটাই তোমার PIN হবে।");
   } else {
     pinMode = "unlock";
     document.getElementById("lockTitle").textContent = "PIN দিয়ে খুলো";
+    pinHint("তোমার সেট করা PIN দাও।");
   }
+}
+function resetPin(e) {
+  e.preventDefault();
+  if (!confirm("PIN ভুলে গেছো? এটা করলে তোমার PIN মুছে যাবে, আর সেভ করা সব ডকুমেন্টও মুছে যাবে। নিশ্চিত?")) return;
+  localStorage.removeItem("sd_pin");
+  localStorage.removeItem("sd_docs");
+  location.reload();
 }
 
 /* ---------- ট্যাব ---------- */
