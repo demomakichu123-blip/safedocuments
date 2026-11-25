@@ -1,1 +1,5 @@
-{"appId":"com.safedocuments.app","appName":"SafeDocuments","webDir":"www"}
+{
+  "appId": "com.safedocuments.app",
+  "appName": "SafeDocuments",
+  "webDir": "www"
+}
